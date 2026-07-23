@@ -65,6 +65,94 @@ except ImportError:
 # ======================================================================
 
 
+def _check_pi_installed() -> dict:
+    """Check if the Pi CLI is installed and accessible (returns structured dict).
+
+    Returns:
+        dict with keys: installed (bool), version (str|None),
+        path (str|None), error (str|None)
+    """
+    pi_path = shutil.which("pi")
+    if pi_path is None:
+        return {"installed": False, "version": None, "path": None, "error": None}
+    try:
+        result = subprocess.run(["pi", "--version"], capture_output=True, text=True, timeout=10)
+        version = result.stdout.strip() if result.returncode == 0 else None
+        return {"installed": True, "version": version, "path": pi_path, "error": None}
+    except Exception as exc:
+        return {"installed": True, "version": None, "path": pi_path, "error": str(exc)}
+
+
+def install_pi(version: str = "latest") -> dict:
+    """Install the Pi coding agent via npm.
+
+    Args:
+        version: Pi version to install ("latest" or a pinned version like "1.2.3").
+
+    Returns:
+        dict with keys: success (bool), output (str), error (str|None)
+    """
+    package = "@earendil-works/pi-coding-agent"
+    if version and version != "latest":
+        package = f"{package}@{version}"
+
+    try:
+        result = subprocess.run(
+            ["npm", "install", "-g", package],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        success = result.returncode == 0
+        return {
+            "success": success,
+            "output": result.stdout.strip() or result.stderr.strip(),
+            "error": None if success else result.stderr.strip(),
+        }
+    except FileNotFoundError:
+        return {
+            "success": False,
+            "output": "",
+            "error": "npm not found in PATH",
+        }
+    except Exception as exc:
+        return {
+            "success": False,
+            "output": "",
+            "error": str(exc),
+        }
+
+
+def _get_pi_status() -> dict:
+    """Get the full status of the Pi CLI and its dependencies.
+
+    Returns:
+        dict with keys: pi (dict from _check_pi_installed),
+        gh_authenticated (bool|None), gh_error (str|None)
+    """
+    pi = _check_pi_installed()
+    status: dict = {"pi": pi, "gh_authenticated": None, "gh_error": None}
+
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        status["gh_authenticated"] = result.returncode == 0
+        if not status["gh_authenticated"]:
+            status["gh_error"] = result.stderr.strip()
+    except FileNotFoundError:
+        status["gh_authenticated"] = False
+        status["gh_error"] = "gh CLI not found in PATH"
+    except Exception as exc:
+        status["gh_authenticated"] = None
+        status["gh_error"] = str(exc)
+
+    return status
+
+
 def _pi_installed() -> bool:
     """Return True if ``pi`` is available on PATH."""
     return shutil.which("pi") is not None
