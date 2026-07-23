@@ -1,0 +1,6 @@
+name: pier
+steps:
+  - name: lint-py
+    run: make lint-py
+  - name: test-py
+    run: make test-py
