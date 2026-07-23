@@ -148,10 +148,7 @@ def pier_install_check() -> str:
     }
 
     if not installed:
-        result["error"] = (
-            "Pi CLI not found on PATH. "
-            "Install with: npm install -g @earendil-works/pi-coding-agent"
-        )
+        result["error"] = "Pi CLI not found on PATH. Install with: npm install -g @earendil-works/pi-coding-agent"
 
     return json.dumps(result)
 
@@ -189,11 +186,13 @@ def pier_delegate(
     import time
 
     if not _pi_installed():
-        return json.dumps({
-            "success": False,
-            "error": "Pi CLI not found. Install: npm install -g @earendil-works/pi-coding-agent",
-            "exit_code": -1,
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "error": "Pi CLI not found. Install: npm install -g @earendil-works/pi-coding-agent",
+                "exit_code": -1,
+            }
+        )
 
     start = time.monotonic()
 
@@ -214,36 +213,42 @@ def pier_delegate(
             cwd=workdir or os.getcwd(),
         )
         elapsed = round(time.monotonic() - start, 2)
-        return json.dumps({
-            "success": result.returncode == 0,
-            "exit_code": result.returncode,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "elapsed_seconds": elapsed,
-            "mode": "print",
-        })
+        return json.dumps(
+            {
+                "success": result.returncode == 0,
+                "exit_code": result.returncode,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+                "elapsed_seconds": elapsed,
+                "mode": "print",
+            }
+        )
     except subprocess.TimeoutExpired:
         elapsed = round(time.monotonic() - start, 2)
-        return json.dumps({
-            "success": False,
-            "exit_code": -1,
-            "error": f"Pi timed out after {timeout}s",
-            "stdout": "",
-            "stderr": "",
-            "elapsed_seconds": elapsed,
-            "mode": "print",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "exit_code": -1,
+                "error": f"Pi timed out after {timeout}s",
+                "stdout": "",
+                "stderr": "",
+                "elapsed_seconds": elapsed,
+                "mode": "print",
+            }
+        )
     except Exception as exc:
         elapsed = round(time.monotonic() - start, 2)
-        return json.dumps({
-            "success": False,
-            "exit_code": -1,
-            "error": str(exc),
-            "stdout": "",
-            "stderr": "",
-            "elapsed_seconds": elapsed,
-            "mode": "print",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "exit_code": -1,
+                "error": str(exc),
+                "stdout": "",
+                "stderr": "",
+                "elapsed_seconds": elapsed,
+                "mode": "print",
+            }
+        )
 
 
 # ======================================================================
@@ -283,10 +288,12 @@ def pier_session(
         JSON string with session metadata, mode used, and result summary.
     """
     if not _pi_installed():
-        return json.dumps({
-            "success": False,
-            "error": "Pi CLI not found. Install: npm install -g @earendil-works/pi-coding-agent",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "error": "Pi CLI not found. Install: npm install -g @earendil-works/pi-coding-agent",
+            }
+        )
 
     # Determine available mode
     if _pi_supports_rpc():
@@ -339,17 +346,19 @@ def _pier_session_rpc(
     In the full implementation this would use asyncio.run() or
     a threaded event loop. For the scaffold we return the plan.
     """
-    return json.dumps({
-        "success": True,
-        "mode": "rpc",
-        "session_id": session_id or "(new session)",
-        "prompt": prompt[:200] + ("..." if len(prompt) > 200 else ""),
-        "message": (
-            "RPC session scaffold: PiRpcClient would spawn `pi --mode rpc`, "
-            "send `prompt` command, stream events, and return a structured "
-            "result. Full RPC bridge implementation is planned for v0.2.0."
-        ),
-    })
+    return json.dumps(
+        {
+            "success": True,
+            "mode": "rpc",
+            "session_id": session_id or "(new session)",
+            "prompt": prompt[:200] + ("..." if len(prompt) > 200 else ""),
+            "message": (
+                "RPC session scaffold: PiRpcClient would spawn `pi --mode rpc`, "
+                "send `prompt` command, stream events, and return a structured "
+                "result. Full RPC bridge implementation is planned for v0.2.0."
+            ),
+        }
+    )
 
 
 def _pier_session_json(
@@ -378,26 +387,32 @@ def _pier_session_json(
             cwd=workdir or os.getcwd(),
         )
         elapsed = round(time.monotonic() - start, 2)
-        return json.dumps({
-            "success": result.returncode == 0,
-            "mode": "json",
-            "exit_code": result.returncode,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "elapsed_seconds": elapsed,
-        })
+        return json.dumps(
+            {
+                "success": result.returncode == 0,
+                "mode": "json",
+                "exit_code": result.returncode,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+                "elapsed_seconds": elapsed,
+            }
+        )
     except subprocess.TimeoutExpired:
-        return json.dumps({
-            "success": False,
-            "mode": "json",
-            "error": f"Pi JSON session timed out after {timeout}s",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "mode": "json",
+                "error": f"Pi JSON session timed out after {timeout}s",
+            }
+        )
     except Exception as exc:
-        return json.dumps({
-            "success": False,
-            "mode": "json",
-            "error": str(exc),
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "mode": "json",
+                "error": str(exc),
+            }
+        )
 
 
 # ======================================================================

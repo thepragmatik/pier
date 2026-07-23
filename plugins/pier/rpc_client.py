@@ -157,8 +157,7 @@ class PiRpcClient:
 
             if not shutil.which(self._pi_bin):
                 raise RuntimeError(
-                    f"Pi CLI not found: {self._pi_bin!r}. "
-                    f"Install with: npm install -g @earendil-works/pi-coding-agent"
+                    f"Pi CLI not found: {self._pi_bin!r}. Install with: npm install -g @earendil-works/pi-coding-agent"
                 )
 
             self._process = await asyncio.create_subprocess_exec(
@@ -306,6 +305,7 @@ class PiRpcClient:
     def _make_id() -> str:
         """Generate a unique request id."""
         import uuid
+
         return uuid.uuid4().hex[:12]
 
 

@@ -30,15 +30,18 @@ Error recovery strategy (event-level):
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
 from typing import Any
+
+# ruff: noqa: UP042 — (str, Enum) is required for Python < 3.11 compatibility;
+# StrEnum was added in 3.11 and the test/CI env uses Python 3.9.
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
 
 
-class AgentStatus(StrEnum):
+class AgentStatus(str, Enum):
     """Pi agent lifecycle status codes."""
 
     STARTING = "starting"
@@ -48,7 +51,7 @@ class AgentStatus(StrEnum):
     ABORTED = "aborted"
 
 
-class ToolStatus(StrEnum):
+class ToolStatus(str, Enum):
     """Pi tool execution status."""
 
     STARTED = "started"
@@ -57,7 +60,7 @@ class ToolStatus(StrEnum):
     ERROR = "error"
 
 
-class CompactionStatus(StrEnum):
+class CompactionStatus(str, Enum):
     """Pi context compaction status."""
 
     STARTED = "started"
