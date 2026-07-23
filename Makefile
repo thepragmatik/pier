@@ -8,12 +8,12 @@ install:
 lint: lint-py lint-js
 
 fmt:
-	ruff format pier/ tests/
-	ruff check --fix pier/ tests/
+	ruff format plugins/ tests/
+	ruff check --fix plugins/ tests/
 
 lint-py:
-	ruff check pier/ tests/
-	ruff format --check pier/ tests/
+	ruff check plugins/ tests/
+	ruff format --check plugins/ tests/
 
 test-py:
 	python -m pytest tests/ -v
