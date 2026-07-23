@@ -66,7 +66,7 @@ Key events the plugin will consume:
 
 ### Fallback: JSON Mode
 
-If the RPC process fails (Pi not installed, `--mode rpc` unsupported, version mismatch), the plugin falls back to `pi --mode json` which outputs JSON Lines events to stdout without the bidirectional command channel.
+If the RPC process fails (Pi version mismatches `--mode rpc`, RPC connection refused), the plugin falls back to `pi --mode json` which outputs JSON Lines events to stdout without the bidirectional command channel.
 
 **Differences from RPC mode:**
 - No commands can be sent (prompt is CLI argument, not a `prompt` command)

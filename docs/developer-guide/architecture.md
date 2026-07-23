@@ -31,15 +31,15 @@ with detailed component diagrams.
                │                    │                  │
                ▼                    ▼                  ▼
          ┌──────────┐        ┌──────────┐       ┌──────────┐
-         │  pi agent│        │  pi rpc  │       │  pi run  │
-         │  + ACP   │        │  (JSONL) │       │  (text)  │
+         │  ACP     │        │  RPC     │       │  Print   │
+         │  Server  │        │  Mode    │       │  Mode    │
          └──────────┘        └──────────┘       └──────────┘
 ```
 
 ### Layer 1: Skill (Terminal Subprocess)
 
 - Wraps Pi in a terminal subprocess, exactly like existing coding-agent skills
-- Hermes invokes `pi run "<task>"`, captures stdout/stderr, parses the result
+- Hermes invokes `pi -p "<task>"`, captures stdout/stderr, parses the result
 - No custom protocol — works out of the box with any Hermes install
 - Best for: quick adoption, simple one-shot delegations
 

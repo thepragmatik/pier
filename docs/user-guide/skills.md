@@ -8,7 +8,7 @@ existing coding-agent skills (Codex, Claude Code, OpenCode) but targets Pi speci
 The Pier skill:
 
 1. Accepts a coding task from Hermes
-2. Invokes Pi in the appropriate CLI mode (`pi run`)
+2. Invokes Pi in the appropriate CLI mode (`pi -p`)
 3. Captures stdout/stderr and exit code
 4. Returns structured results to Hermes
 
@@ -54,7 +54,7 @@ environment:
 
 | Mode | Command | Use Case |
 |------|---------|----------|
-| `run` | `pi run "<task>"` | One-shot task, returns diff + summary |
+| `run` | `pi -p "<task>"` | One-shot task, returns diff + summary |
 | `chat` | `pi chat` | Interactive coding session |
 | `rpc` | `pi rpc` | JSONL RPC protocol (use Layer 2 instead) |
 | `agent` | `pi agent` | Long-running agent with session persistence |

@@ -78,6 +78,7 @@ nav:
   - Architecture:
       - architecture/index.md
       - "Overview": architecture/overview.md
+      - "Integration Spec": architecture/pier-integration-spec.md
       - "ADR-001: Integration Approach": architecture/adr-001-integration-approach.md
       - "ADR-002: Communication Protocol": architecture/adr-002-communication-protocol.md
       - "ADR-003: Dogfooding Strategy": architecture/adr-003-dogfooding-strategy.md
