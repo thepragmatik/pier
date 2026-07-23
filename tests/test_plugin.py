@@ -56,11 +56,13 @@ def test_register_gates_on_pi_availability():
 
 def test_pier_install_check_installed():
     """Returns JSON with installed info when Pi is available."""
-    with mock.patch("plugins.pier._pi_installed", return_value=True), \
-         mock.patch("plugins.pier._pi_version", return_value="pi 1.2.3"), \
-         mock.patch("plugins.pier._pi_supports_rpc", return_value=True), \
-         mock.patch("plugins.pier._pi_supports_json", return_value=True), \
-         mock.patch("plugins.pier.shutil.which", return_value="/usr/local/bin/pi"):
+    with (
+        mock.patch("plugins.pier._pi_installed", return_value=True),
+        mock.patch("plugins.pier._pi_version", return_value="pi 1.2.3"),
+        mock.patch("plugins.pier._pi_supports_rpc", return_value=True),
+        mock.patch("plugins.pier._pi_supports_json", return_value=True),
+        mock.patch("plugins.pier.shutil.which", return_value="/usr/local/bin/pi"),
+    ):
         result = pier_install_check()
         data = json.loads(result)
 
@@ -74,9 +76,11 @@ def test_pier_install_check_installed():
 
 def test_pier_install_check_not_installed():
     """Returns install instructions when Pi is missing."""
-    with mock.patch("plugins.pier._pi_installed", return_value=False), \
-         mock.patch("plugins.pier._pi_version", return_value=""), \
-         mock.patch("plugins.pier.shutil.which", return_value=None):
+    with (
+        mock.patch("plugins.pier._pi_installed", return_value=False),
+        mock.patch("plugins.pier._pi_version", return_value=""),
+        mock.patch("plugins.pier.shutil.which", return_value=None),
+    ):
         result = pier_install_check()
         data = json.loads(result)
 
@@ -95,8 +99,10 @@ def test_pier_delegate_success():
         stdout="Feature implemented successfully.",
         stderr="",
     )
-    with mock.patch("plugins.pier.subprocess.run", return_value=fake_run), \
-         mock.patch("plugins.pier._pi_installed", return_value=True):
+    with (
+        mock.patch("plugins.pier.subprocess.run", return_value=fake_run),
+        mock.patch("plugins.pier._pi_installed", return_value=True),
+    ):
         result = pier_delegate(prompt="Implement login page")
         data = json.loads(result)
 
@@ -107,8 +113,10 @@ def test_pier_delegate_success():
 
 def test_pier_delegate_with_model():
     """Model name is passed via --model flag."""
-    with mock.patch("plugins.pier._pi_installed", return_value=True), \
-         mock.patch("plugins.pier.subprocess.run") as mock_run:
+    with (
+        mock.patch("plugins.pier._pi_installed", return_value=True),
+        mock.patch("plugins.pier.subprocess.run") as mock_run,
+    ):
         mock_run.return_value = mock.Mock(returncode=0, stdout="ok", stderr="")
         pier_delegate(prompt="Refactor", model="gpt-4o")
 
@@ -119,8 +127,10 @@ def test_pier_delegate_with_model():
 
 def test_pier_delegate_timeout():
     """Timeout produces error response."""
-    with mock.patch("plugins.pier._pi_installed", return_value=True), \
-         mock.patch("plugins.pier.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["pi"], timeout=5)):
+    with (
+        mock.patch("plugins.pier._pi_installed", return_value=True),
+        mock.patch("plugins.pier.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["pi"], timeout=5)),
+    ):
         result = pier_delegate(prompt="Long task", timeout=5)
         data = json.loads(result)
 
@@ -145,8 +155,10 @@ def test_pier_delegate_nonzero_exit():
         stdout="",
         stderr="Syntax error in generated code.",
     )
-    with mock.patch("plugins.pier.subprocess.run", return_value=fake_run), \
-         mock.patch("plugins.pier._pi_installed", return_value=True):
+    with (
+        mock.patch("plugins.pier.subprocess.run", return_value=fake_run),
+        mock.patch("plugins.pier._pi_installed", return_value=True),
+    ):
         result = pier_delegate(prompt="Bad task")
         data = json.loads(result)
 
@@ -208,8 +220,10 @@ def test_check_pi_installed_found():
     fake_path = "/usr/local/bin/pi"
     fake_version = "pi 1.2.3"
 
-    with mock.patch("plugins.pier.shutil.which", return_value=fake_path), \
-         mock.patch("plugins.pier.subprocess.run") as mock_run:
+    with (
+        mock.patch("plugins.pier.shutil.which", return_value=fake_path),
+        mock.patch("plugins.pier.subprocess.run") as mock_run,
+    ):
         mock_result = mock.MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = fake_version

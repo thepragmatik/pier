@@ -45,8 +45,9 @@ import asyncio
 import json
 import logging
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger("pier.rpc_client")
 
@@ -198,7 +199,7 @@ class PiRpcClient:
         try:
             proc.terminate()
             await asyncio.wait_for(proc.wait(), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
             await proc.wait()
         logger.info("Pi RPC client stopped")
@@ -226,9 +227,11 @@ class PiRpcClient:
             self._process.stdin.write(payload.encode("utf-8"))
             await self._process.stdin.drain()
             return await asyncio.wait_for(future, timeout=self.timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError as err:
             self._pending_requests.pop(request_id, None)
-            raise RuntimeError(f"Pi RPC command timed out after {self.timeout}s: {command.get('command', '?')}")
+            raise RuntimeError(
+                f"Pi RPC command timed out after {self.timeout}s: {command.get('command', '?')}"
+            ) from err
 
     def on_event(self, handler: EventHandler) -> None:
         """Register a streaming event handler.
