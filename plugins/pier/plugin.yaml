@@ -32,3 +32,4 @@ tools:
   - pier_delegate
   - pier_session
   - pier_status
+  - pier_install

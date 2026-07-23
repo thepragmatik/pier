@@ -21,8 +21,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check pier/ tests/
-      - run: ruff format --check pier/ tests/
+      - run: ruff check plugins/ tests/
+      - run: ruff format --check plugins/ tests/
 
   test-py:
     name: pytest (py${{ matrix.python-version }})

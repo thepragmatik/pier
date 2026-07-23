@@ -35,7 +35,7 @@ dev = [
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
-include = ["pier*"]
+include = ["plugins*"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
@@ -49,4 +49,4 @@ indent-style = "space"
 testpaths = ["tests"]
 pythonpath = ["."]
 [tool.hermes.plugins]
-pier = "pier.plugin"
+pier = "plugins.pier"

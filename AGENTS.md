@@ -32,8 +32,8 @@ Every PR must pass:
 
 | Gate | Command |
 |------|---------|
-| Python lint | `ruff check pier/ tests/` |
-| Python format | `ruff format --check pier/ tests/` |
+| Python lint | `ruff check plugins/ tests/` |
+| Python format | `ruff format --check plugins/ tests/` |
 | Python tests | `pytest tests/ -v` |
 | TypeScript lint | `npm run lint` |
 | TypeScript typecheck | `npm run typecheck` |
@@ -58,22 +58,27 @@ Pier is dual-language. When adding a feature that spans both:
 
 ```
 pier/
-├── pier/                   # Python plugin (Hermes side)
-│   ├── __init__.py
-│   └── plugin.py
-├── tests/                  # Python tests
+├── plugins/pier/            # Python plugin (Hermes side)
+│   ├── __init__.py           # plugin entry point + register()
+│   ├── rpc_client.py         # Pi RPC client
+│   ├── event_parser.py       # RPC event parser
+│   └── plugin.yaml           # plugin manifest
+├── tests/                    # Python tests
+│   ├── test_plugin.py        # plugin tests
+│   └── plugins/
+│       └── test_pier_plugin.py  # lifecycle management tests
 ├── packages/
-│   └── pier-extension/     # TypeScript extension
+│   └── pier-extension/       # TypeScript extension
 │       ├── src/
 │       └── test/
 ├── docs/
-│   ├── architecture/       # ADRs
-│   └── research/           # background research
+│   ├── architecture/         # ADRs
+│   └── research/             # background research
 ├── mkdocs.yml
 ├── pyproject.toml
-├── package.json            # npm workspace root
+├── package.json              # npm workspace root
 ├── Makefile
 ├── README.md
 ├── CONTRIBUTING.md
-└── AGENTS.md               # ← this file
+└── AGENTS.md                 # ← this file
 ```

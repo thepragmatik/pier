@@ -668,9 +668,10 @@ def register(ctx) -> None:
             "name": "pier_session",
             "description": (
                 "Start or resume a multi-turn Pi coding session via RPC mode "
-                "(pi --mode rpc). Provides structured events, session management, "
-                "cancellation, cost tracking, and streaming progress. Falls back "
-                "through JSON → print mode when RPC is unavailable."
+                "(pi --mode rpc). NOTE: RPC bridge is in preview — currently "
+                "returns a scaffold response; full RPC implementation is planned "
+                "for v0.2.0. Falls back through JSON → print mode when RPC is "
+                "unavailable."
             ),
             "parameters": {
                 "type": "object",
@@ -752,7 +753,37 @@ def register(ctx) -> None:
         emoji="📊",
     )
 
+    # ------------------------------------------------------------------
+    # pier_install
+    # ------------------------------------------------------------------
+    ctx.register_tool(
+        name="pier_install",
+        toolset="pier",
+        schema={
+            "name": "pier_install",
+            "description": (
+                "Install the Pi coding agent CLI via npm. "
+                "Supports pinned versions (e.g. '1.5.0') or 'latest'. "
+                "Requires npm to be available on PATH."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string",
+                        "description": "Pi version to install ('latest' or a pinned version like '1.5.0'). Defaults to 'latest'.",
+                    },
+                },
+                "required": [],
+            },
+        },
+        handler=lambda args, **kw: json.dumps(install_pi(version=args.get("version", "latest"))),
+        check_fn=_check_pier_requirements,
+        description="Install Pi coding agent CLI via npm.",
+        emoji="📦",
+    )
+
     logger.info(
-        "Pier plugin registered 4 tools: pier_install_check, pier_delegate, "
-        "pier_session, pier_status (toolset=pier, gated on pi PATH)"
+        "Pier plugin registered 5 tools: pier_install_check, pier_delegate, "
+        "pier_session, pier_status, pier_install (toolset=pier, gated on pi PATH)"
     )
