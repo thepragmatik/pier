@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Integration that lets Pi work with a Hermes orchestrator"
 readme = "README.md"
 license = { text = "Apache-2.0" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "The Pragmatik" },
 ]
