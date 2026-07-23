@@ -8,14 +8,14 @@
 
 ## Table of Contents
 
-1. [LangChain / LangGraph — Codex Integration & Tool-Calling](#1-langchain--langgraph)
+1. [LangChain / LangGraph — Codex Integration & Tool-Calling](#1-langchain-langgraph)
 2. [Open Interpreter — Plugin System & Tool Registration](#2-open-interpreter)
 3. [Claude Code MCP — Tool Exposure via MCP](#3-claude-code-mcp)
 4. [ACP Protocol — Hermes ACP Adapter Analysis](#4-acp-protocol)
 5. [Protocol Landscape: MCP vs ACP vs A2A vs ANP](#5-protocol-landscape)
-6. [awesome-cli-coding-agents: Orchestration Ecosystem Map](#6-awesome-cli-coding-agents)
+6. [awesome-cli-coding-agents: Orchestration Ecosystem Map](#6-awesome-cli-coding-agents-orchestration-ecosystem)
 7. [Key Question: Is There a Protocol Standard?](#7-key-question)
-8. [Findings & Recommendations](#8-findings--recommendations)
+8. [Findings & Recommendations](#8-findings-recommendations)
 
 ---
 
