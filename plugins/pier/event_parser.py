@@ -30,7 +30,7 @@ Error recovery strategy (event-level):
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 
-class AgentStatus(str, Enum):
+class AgentStatus(StrEnum):
     """Pi agent lifecycle status codes."""
 
     STARTING = "starting"
@@ -48,7 +48,7 @@ class AgentStatus(str, Enum):
     ABORTED = "aborted"
 
 
-class ToolStatus(str, Enum):
+class ToolStatus(StrEnum):
     """Pi tool execution status."""
 
     STARTED = "started"
@@ -57,7 +57,7 @@ class ToolStatus(str, Enum):
     ERROR = "error"
 
 
-class CompactionStatus(str, Enum):
+class CompactionStatus(StrEnum):
     """Pi context compaction status."""
 
     STARTED = "started"

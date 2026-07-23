@@ -290,7 +290,6 @@ def pier_session(
 
     # Determine available mode
     if _pi_supports_rpc():
-        mode = "rpc"
         return _pier_session_rpc(
             prompt=prompt,
             workdir=workdir,
@@ -302,7 +301,6 @@ def pier_session(
             timeout=timeout,
         )
     elif _pi_supports_json():
-        mode = "json"
         return _pier_session_json(
             prompt=prompt,
             workdir=workdir,
@@ -312,7 +310,6 @@ def pier_session(
         )
     else:
         # Last resort: print mode
-        mode = "print"
         result = pier_delegate(
             prompt=prompt,
             workdir=workdir,
@@ -463,7 +460,7 @@ def pier_status() -> str:
 # ======================================================================
 
 
-def register(ctx) -> None:  # noqa: C901
+def register(ctx) -> None:
     """Register the Pier plugin's tools with Hermes.
 
     Called by Hermes's plugin loader. The ``ctx`` object is a
