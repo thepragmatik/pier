@@ -1,0 +1,34 @@
+name: pier
+label: Pier
+kind: toolset
+version: 0.1.0
+description: >
+  Pi coding agent integration for Hermes Agent.
+  Delegate coding tasks to Pi (https://github.com/earendil-works/pi)
+  via print mode (one-shot) or RPC mode (multi-turn sessions).
+  Provides structured delegation, session lifecycle, progress streaming,
+  and graceful fallback across Pi's CLI modes.
+author: Pier maintainers
+requires_env:
+  - name: PI_INSTALLED
+    description: "Pi CLI must be available on PATH (install: npm install -g @earendil-works/pi-coding-agent)"
+    prompt: "Is Pi installed? (npm install -g @earendil-works/pi-coding-agent)"
+    password: false
+optional_env:
+  - name: PIER_DEFAULT_PROVIDER
+    description: "Default LLM provider for Pi delegation (e.g., anthropic, openai, openrouter)"
+    prompt: "Default provider"
+    password: false
+  - name: PIER_DEFAULT_MODEL
+    description: "Default model for Pi delegation (e.g., claude-sonnet-4-20250514)"
+    prompt: "Default model"
+    password: false
+  - name: PIER_RPC_TIMEOUT
+    description: "Override RPC command timeout in seconds (default: 600)"
+    prompt: "RPC timeout (seconds)"
+    password: false
+tools:
+  - pier_install_check
+  - pier_delegate
+  - pier_session
+  - pier_status
