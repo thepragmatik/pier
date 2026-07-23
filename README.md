@@ -1,7 +1,7 @@
 # Pier
 
 [![CI](https://github.com/thepragmatik/pier/actions/workflows/ci.yml/badge.svg)](https://github.com/thepragmatik/pier/actions/workflows/ci.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Hermes](https://img.shields.io/badge/hermes-agent-plugin-blueviolet.svg)](https://github.com/nousresearch/hermes-agent)
 

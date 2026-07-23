@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Docker (local dev helper)
+.dkr
+
+# npm
+node_modules/
