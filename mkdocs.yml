@@ -1,0 +1,85 @@
+site_name: Pier
+site_description: >-
+  Pier — Hermes Agent ↔ Pi coding-agent integration. A composable bridge that lets
+  Hermes delegate coding tasks to Pi with structured RPC, plugins, and TypeScript extensions.
+site_url: https://thepragmatik.github.io/pier/
+repo_url: https://github.com/thepragmatik/pier
+repo_name: thepragmatik/pier
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: "!!python/name:pymdownx.superfences.fence_code_format"
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - User Guide:
+      - user-guide/index.md
+      - Getting Started: user-guide/getting-started.md
+      - Skills: user-guide/skills.md
+      - Plugins: user-guide/plugins.md
+  - Developer Guide:
+      - developer-guide/index.md
+      - Architecture: developer-guide/architecture.md
+      - Contributing: developer-guide/contributing.md
+      - ADRs: developer-guide/adrs.md
+  - Reference:
+      - reference/index.md
+  - Research:
+      - research/index.md
+      - "Pi Architecture Deep-Dive": research/pi-architecture-deep-dive.md
+      - "Hermes Coding-Agent Patterns": research/hermes-coding-agent-patterns.md
+      - "Competitive Landscape": research/competitive-integration-landscape.md
+  - Architecture:
+      - architecture/index.md
+      - "Overview": architecture/overview.md
+      - "ADR-001: Integration Approach": architecture/adr-001-integration-approach.md
+      - "ADR-002: Communication Protocol": architecture/adr-002-communication-protocol.md
+      - "ADR-003: Dogfooding Strategy": architecture/adr-003-dogfooding-strategy.md
+  - Blog:
+      - blog/index.md
