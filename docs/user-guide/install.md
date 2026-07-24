@@ -55,6 +55,28 @@ hermes chat -q "Check if Pi is installed" --quiet
 # Should trigger the pier_install_check tool
 ```
 
+## Model & Provider Configuration
+
+Pier **auto-inherits** your Hermes `model.default` and `model.provider` settings from `config.yaml`. No separate Pi configuration needed.
+
+```yaml
+# ~/.hermes/profiles/hswarm-orch/config.yaml
+model:
+  provider: custom
+  default: deepseek-v4-flash
+```
+
+With the above config, `pier_delegate` and `pier_session` will automatically use `--provider custom --model deepseek-v4-flash`. You can still override per-call:
+
+```
+pier_delegate(prompt="fix bug", model="some-other-model")
+```
+
+**Fallback behavior:**
+1. Explicit `model`/`provider` argument (if passed)
+2. Hermes `config.yaml` values (auto-detected)
+3. Pi's built-in defaults (`custom` / `deepseek-v4-flash`)
+
 ## Plugin Tools
 
 The Pier plugin registers these tools:
