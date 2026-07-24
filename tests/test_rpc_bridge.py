@@ -66,16 +66,16 @@ def test_basic_prompt():
 
     cmd = [PI_BIN, "--mode", "rpc", "--no-session"]
     proc = subprocess.Popen(
-        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, text=True,
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     events = []
     try:
-        proc.stdin.write(json.dumps({
-            "type": "prompt",
-            "message": "What is 2+2? Answer in one sentence."
-        }) + "\n")
+        proc.stdin.write(json.dumps({"type": "prompt", "message": "What is 2+2? Answer in one sentence."}) + "\n")
         proc.stdin.flush()
 
         # Wait for agent_settled
@@ -111,10 +111,7 @@ def test_basic_prompt():
             pass
 
     text = extract_text(events)
-    prompt_ok = any(
-        e.get("command") == "prompt" and e.get("success")
-        for e in events
-    )
+    prompt_ok = any(e.get("command") == "prompt" and e.get("success") for e in events)
 
     results = {
         "pass": len(text) > 0 and prompt_ok and settled,
@@ -135,16 +132,19 @@ def test_abort():
 
     cmd = [PI_BIN, "--mode", "rpc", "--no-session"]
     proc = subprocess.Popen(
-        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, text=True,
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     events = []
     try:
-        proc.stdin.write(json.dumps({
-            "type": "prompt",
-            "message": "Write a long story about a cat on an epic galaxy adventure."
-        }) + "\n")
+        proc.stdin.write(
+            json.dumps({"type": "prompt", "message": "Write a long story about a cat on an epic galaxy adventure."})
+            + "\n"
+        )
         proc.stdin.flush()
 
         # Brief delay so processing can start
@@ -165,10 +165,7 @@ def test_abort():
         except Exception:
             pass
 
-    abort_ok = any(
-        e.get("command") == "abort" and e.get("success")
-        for e in events
-    )
+    abort_ok = any(e.get("command") == "abort" and e.get("success") for e in events)
     settled = any(e.get("type") == "agent_settled" for e in events)
 
     results = {
@@ -188,17 +185,17 @@ def test_get_state():
 
     cmd = [PI_BIN, "--mode", "rpc", "--no-session"]
     proc = subprocess.Popen(
-        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, text=True,
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     events = []
     try:
         # Send prompt
-        proc.stdin.write(json.dumps({
-            "type": "prompt",
-            "message": "Hello"
-        }) + "\n")
+        proc.stdin.write(json.dumps({"type": "prompt", "message": "Hello"}) + "\n")
         proc.stdin.flush()
 
         # Wait for agent_settled from the prompt
@@ -271,9 +268,9 @@ def test_get_state():
     expected = {"model", "thinkingLevel", "isStreaming", "messageCount"}
 
     results = {
-        "pass": (state_response is not None
-                 and state_response.get("success", False)
-                 and expected.issubset(state_fields)),
+        "pass": (
+            state_response is not None and state_response.get("success", False) and expected.issubset(state_fields)
+        ),
         "state_found": state_response is not None,
         "state_success": state_response.get("success", False) if state_response else False,
         "state_fields": sorted(state_fields),
