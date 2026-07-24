@@ -11,12 +11,21 @@ Usage: python3 test_rpc_bridge.py
 """
 
 import json
+import shutil
 import subprocess
 import sys
 import time
 
+import pytest
+
 PI_BIN = "pi"
 TIMEOUT = 90
+
+# Skip all tests if pi binary is not available (e.g., in CI)
+pytestmark = pytest.mark.skipif(
+    shutil.which(PI_BIN) is None,
+    reason=f"'{PI_BIN}' binary not found on PATH",
+)
 
 
 def extract_text(events: list[dict]) -> str:
