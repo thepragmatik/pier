@@ -77,6 +77,29 @@ pier_delegate(prompt="fix bug", model="some-other-model")
 2. Hermes `config.yaml` values (auto-detected)
 3. Pi's built-in defaults (`custom` / `deepseek-v4-flash`)
 
+## Config Propagation
+
+Pier maps a subset of Hermes config keys to Pi CLI flags and settings automatically. Not all Hermes config applies to Pi — they run on independent model/provider stacks. The full mapping matrix is documented in the [Config Propagation Matrix](../architecture/config-propagation-matrix.md).
+
+**Keys that propagate:**
+
+| Hermes Key | Pi Target | Behavior |
+|---|---|---|
+| `agent.max_turns` | `settings.maxTurns` | Matched when delegating to Pi |
+| `agent.reasoning_effort` | `--thinking <level>` | Passed as CLI flag on spawn |
+| `agent.personalities.*` | `--system-prompt` | Injected when non-default personality |
+| `agent.verbose` | `--verbose` | Passed when Hermes verbose is true |
+| `memory.provider` | pi-hermes-memory extension | Backend kept in sync |
+| `delegation.max_iterations` | `settings.maxTurns` | Aligned for consistent turn budgets |
+
+**Keys that do NOT propagate:**
+
+- Model config (`model.provider`, `model.default`, `model.base_url`, `model.api_key`) — Hermes and Pi use independent provider stacks
+- Tool guardrails (`tool_loop_guardrails.*`) — Pi has no equivalent failure tracking
+- Compression, cron, display, browser — Hermes infrastructure only
+
+See the [Config Propagation Matrix](../architecture/config-propagation-matrix.md) for the full audit across all 6 hswarm profiles, including per-key rationale and risk notes.
+
 ## Plugin Tools
 
 The Pier plugin registers these tools:
