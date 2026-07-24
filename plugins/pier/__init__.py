@@ -65,14 +65,21 @@ except ImportError:
 # ======================================================================
 
 
-def _hermes_config() -> tuple[str | None, str | None]:
-    """Read Hermes active provider/model from config.
+def _hermes_config() -> tuple[str | None, str | None, str | None, bool, str | None, str]:
+    """Read Hermes config: provider, model, reasoning_effort, verbose, and active personality.
 
     Called at handler call time so it always reflects the current config.
-    Falls back to None/None if Hermes is not importable (test env, etc.).
+    Falls back to safe defaults if Hermes is not importable (test env, etc.).
+
+    The active personality name is stored at ``display.personality`` (written by
+    ``/personality <name>`` or ``hermes personality <name>``). The personality
+    prompt text lives at ``agent.personalities.<name>``.
+
+    Skips propagation for the built-in ``technical`` personality since Pi's
+    default coding prompt is equivalent.
 
     Returns:
-        (provider, model) tuple — each is None if unavailable.
+        (provider, model, reasoning_effort, verbose, personality, personality_text) tuple.
     """
     try:
         from hermes_cli.config import load_config
@@ -80,9 +87,76 @@ def _hermes_config() -> tuple[str | None, str | None]:
         cfg = load_config()
         provider: str | None = cfg.get("model", {}).get("provider")
         model: str | None = cfg.get("model", {}).get("default")
-        return provider, model
+        reasoning_effort: str | None = cfg.get("model", {}).get("reasoning_effort")
+        verbose: bool = cfg.get("agent", {}).get("verbose", False)
+
+        # Active personality name lives at display.personality
+        personality: str | None = (cfg.get("display") or {}).get("personality") or None
+        personality_text: str = ""
+        if personality:
+            personalities = (cfg.get("agent") or {}).get("personalities") or {}
+            personality_text = personalities.get(personality, "")
+
+        return provider, model, reasoning_effort, verbose, personality, personality_text
     except Exception:
-        return None, None
+        return None, None, None, False, None, ""
+
+
+def _ensure_pi_settings() -> None:
+    """Write Hermes agent.max_iterations into Pi settings.json as maxTurns.
+
+    Reads agent.max_iterations from Hermes config with fallback chain:
+      1. agent.max_iterations
+      2. delegation.max_iterations
+      3. default 90
+
+    Writes to ~/.pi/settings.json only if the value differs from the
+    current maxTurns (to avoid unnecessary filesystem writes).
+    """
+    try:
+        from hermes_cli.config import load_config
+
+        cfg = load_config()
+        agent_cfg: dict = cfg.get("agent", {}) if isinstance(cfg, dict) else {}
+        delegation_cfg: dict = cfg.get("delegation", {}) if isinstance(cfg, dict) else {}
+
+        max_iterations = agent_cfg.get("max_iterations")
+        if max_iterations is None:
+            max_iterations = delegation_cfg.get("max_iterations")
+        if max_iterations is None:
+            max_iterations = 90
+        else:
+            max_iterations = int(max_iterations)
+
+        pi_settings_path = os.path.expanduser("~/.pi/settings.json")
+
+        # Read existing settings
+        current_settings: dict = {}
+        if os.path.isfile(pi_settings_path):
+            try:
+                with open(pi_settings_path) as fh:
+                    current_settings = json.load(fh)
+            except (json.JSONDecodeError, OSError):
+                pass  # corrupt or unreadable → overwrite
+
+        # Only write if maxTurns differs
+        current_turns = current_settings.get("maxTurns")
+        if current_turns == max_iterations:
+            return  # already correct — no-op
+
+        # Ensure parent directory
+        os.makedirs(os.path.dirname(pi_settings_path), exist_ok=True)
+
+        current_settings["maxTurns"] = max_iterations
+        with open(pi_settings_path, "w") as fh:
+            json.dump(current_settings, fh, indent=2)
+            fh.write("\n")
+
+        logger.debug(
+            "Updated Pi settings maxTurns: %s → %s", current_turns, max_iterations
+        )
+    except Exception as exc:
+        logger.debug("_ensure_pi_settings: %s", exc)
 
 
 def _check_pi_installed() -> dict:
@@ -271,6 +345,9 @@ def pier_delegate(
     workdir: str | None = None,
     model: str | None = None,
     provider: str | None = None,
+    thinking: str | None = None,
+    system_prompt: str | None = None,
+    verbose: bool = False,
     allowed_tools: list[str] | None = None,
     timeout: int = 300,
 ) -> str:
@@ -285,6 +362,11 @@ def pier_delegate(
         workdir: Working directory. Defaults to CWD if empty.
         model: Provider/model override (e.g. 'anthropic/claude-sonnet-4').
         provider: Provider override.
+        thinking: Reasoning effort (low, medium, high). Passed as --thinking.
+        system_prompt: Personality system prompt override. Passed as --system-prompt.
+            Skipped when empty or when the active personality is ``technical``
+            (Pi's default coding prompt is equivalent).
+        verbose: Whether to pass --verbose flag to Pi.
         allowed_tools: Tool allowlist (e.g. ['read', 'bash', 'edit', 'write']).
         timeout: Per-command timeout in seconds (default 300).
 
@@ -292,6 +374,8 @@ def pier_delegate(
         JSON string with exit_code, stdout, stderr, and elapsed_seconds.
     """
     import time
+
+    _ensure_pi_settings()
 
     if not _pi_installed():
         return json.dumps(
@@ -309,6 +393,12 @@ def pier_delegate(
         cmd.extend(["--model", model])
     if provider:
         cmd.extend(["--provider", provider])
+    if thinking:
+        cmd.extend(["--thinking", thinking])
+    if system_prompt:
+        cmd.extend(["--system-prompt", system_prompt])
+    if verbose:
+        cmd.append("--verbose")
     if allowed_tools:
         cmd.extend(["--tools", ",".join(allowed_tools)])
 
@@ -369,6 +459,9 @@ def pier_session(
     workdir: str | None = None,
     model: str | None = None,
     provider: str | None = None,
+    thinking: str | None = None,
+    system_prompt: str | None = None,
+    verbose: bool = False,
     session_id: str | None = None,
     max_turns: int | None = None,
     allowed_tools: list[str] | None = None,
@@ -387,6 +480,10 @@ def pier_session(
         workdir: Working directory. Defaults to CWD if empty.
         model: Provider/model override.
         provider: Provider override.
+        thinking: Reasoning effort (low, medium, high). Passed as --thinking.
+        system_prompt: Personality system prompt override. Passed as --system-prompt.
+            Skipped when empty or ``technical``.
+        verbose: Whether to pass --verbose flag to Pi.
         session_id: Resume an existing Pi session ID.
         max_turns: Maximum LLM turns for this session.
         allowed_tools: Tool allowlist.
@@ -395,6 +492,8 @@ def pier_session(
     Returns:
         JSON string with session metadata, mode used, and result summary.
     """
+    _ensure_pi_settings()
+
     if not _pi_installed():
         return json.dumps(
             {
@@ -410,6 +509,9 @@ def pier_session(
             workdir=workdir,
             model=model,
             provider=provider,
+            thinking=thinking,
+            system_prompt=system_prompt,
+            verbose=verbose,
             session_id=session_id,
             max_turns=max_turns,
             allowed_tools=allowed_tools,
@@ -421,6 +523,9 @@ def pier_session(
             workdir=workdir,
             model=model,
             provider=provider,
+            thinking=thinking,
+            system_prompt=system_prompt,
+            verbose=verbose,
             timeout=timeout,
         )
     else:
@@ -430,6 +535,9 @@ def pier_session(
             workdir=workdir,
             model=model,
             provider=provider,
+            thinking=thinking,
+            system_prompt=system_prompt,
+            verbose=verbose,
             allowed_tools=allowed_tools,
             timeout=timeout,
         )
@@ -443,6 +551,9 @@ def _pier_session_rpc(
     workdir: str | None,
     model: str | None,
     provider: str | None,
+    thinking: str | None,
+    system_prompt: str | None,
+    verbose: bool,
     session_id: str | None,
     max_turns: int | None,
     allowed_tools: list[str] | None,
@@ -460,6 +571,7 @@ def _pier_session_rpc(
             "mode": "rpc",
             "session_id": session_id or "(new session)",
             "prompt": prompt[:200] + ("..." if len(prompt) > 200 else ""),
+            "system_prompt": system_prompt,
             "message": (
                 "RPC session scaffold: PiRpcClient would spawn `pi --mode rpc`, "
                 "send `prompt` command, stream events, and return a structured "
@@ -474,6 +586,9 @@ def _pier_session_json(
     workdir: str | None,
     model: str | None,
     provider: str | None,
+    thinking: str | None,
+    system_prompt: str | None,
+    verbose: bool,
     timeout: int,
 ) -> str:
     """Run a session via Pi's JSON mode (structured events, no commands)."""
@@ -485,6 +600,12 @@ def _pier_session_json(
         cmd.extend(["--model", model])
     if provider:
         cmd.extend(["--provider", provider])
+    if thinking:
+        cmd.extend(["--thinking", thinking])
+    if system_prompt:
+        cmd.extend(["--system-prompt", system_prompt])
+    if verbose:
+        cmd.append("--verbose")
 
     try:
         result = subprocess.run(
@@ -652,6 +773,10 @@ def register(ctx) -> None:
                         "type": "string",
                         "description": "LLM provider override (anthropic, openai, openrouter, ...).",
                     },
+                    "thinking": {
+                        "type": "string",
+                        "description": "Reasoning effort for the delegated model (low, medium, high). Defaults to Hermes config model.reasoning_effort if set.",
+                    },
                     "allowed_tools": {
                         "type": "array",
                         "items": {"type": "string"},
@@ -668,8 +793,11 @@ def register(ctx) -> None:
         handler=lambda args, **kw: pier_delegate(
             prompt=args["prompt"],
             workdir=args.get("workdir"),
-            model=args.get("model") or _hermes_config()[1],
-            provider=args.get("provider") or _hermes_config()[0],
+            model=args.get("model") or (hc := _hermes_config())[1],
+            provider=args.get("provider") or hc[0],
+            thinking=args.get("thinking") or hc[2],
+            verbose=hc[3],
+            system_prompt=hc[5] if hc[4] and hc[4] != "technical" else None,
             allowed_tools=args.get("allowed_tools"),
             timeout=args.get("timeout", 300),
         ),
@@ -736,8 +864,11 @@ def register(ctx) -> None:
         handler=lambda args, **kw: pier_session(
             prompt=args["prompt"],
             workdir=args.get("workdir"),
-            model=args.get("model") or _hermes_config()[1],
-            provider=args.get("provider") or _hermes_config()[0],
+            model=args.get("model") or (hc := _hermes_config())[1],
+            provider=args.get("provider") or hc[0],
+            thinking=args.get("thinking") or hc[2],
+            verbose=hc[3],
+            system_prompt=hc[5] if hc[4] and hc[4] != "technical" else None,
             session_id=args.get("session_id"),
             max_turns=args.get("max_turns"),
             allowed_tools=args.get("allowed_tools"),
