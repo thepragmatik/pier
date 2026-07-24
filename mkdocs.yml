@@ -32,11 +32,20 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - User Guide:
+      - Getting Started: user-guide/getting-started.md
+      - Installation: user-guide/install.md
+      - Skills: user-guide/skills.md
+      - Plugins: user-guide/plugins.md
+      - Pi Extensions: user-guide/pi-extensions.md
   - Architecture:
       - Overview: architecture/overview.md
+      - Integration Spec: architecture/pier-integration-spec.md
       - ADR 1 - Integration Approach: architecture/adr-001-integration-approach.md
       - ADR 2 - Communication Protocol: architecture/adr-002-communication-protocol.md
       - ADR 3 - Dogfooding Strategy: architecture/adr-003-dogfooding-strategy.md
+  - Reference:
+      - Pi Extension Ecosystem Guide: reference/pi-ecosystem-guide.md
   - Research:
       - Pi Architecture: research/pi-architecture-deep-dive.md
       - Hermes Coding Patterns: research/hermes-coding-agent-patterns.md
