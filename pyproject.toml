@@ -1,6 +1,6 @@
 [project]
 name = "pier-hermes"
-version = "0.1.0"
+version = "0.1.3"
 description = "Integration that lets Pi work with a Hermes orchestrator"
 readme = "README.md"
 license = { text = "Apache-2.0" }
