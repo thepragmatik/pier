@@ -1,5 +1,5 @@
 [project]
-name = "pier"
+name = "pier-hermes"
 version = "0.1.0"
 description = "Integration that lets Pi work with a Hermes orchestrator"
 readme = "README.md"

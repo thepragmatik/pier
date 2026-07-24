@@ -12,7 +12,7 @@ This guide walks you through installing Pier and running your first Pi delegatio
 
 ```bash
 # Install Pier from PyPI
-pip install pier
+pip install pier-hermes
 
 # Verify the installation
 pier --version

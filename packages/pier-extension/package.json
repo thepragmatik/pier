@@ -1,8 +1,11 @@
 {
   "name": "@pier/extension",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Pier Hermes Agent extension — TypeScript companion to the Python plugin",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
