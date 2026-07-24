@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/pier/
+      url: https://pypi.org/project/pier-hermes/
     permissions:
       id-token: write
 
