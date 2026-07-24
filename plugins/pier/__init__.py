@@ -65,6 +65,26 @@ except ImportError:
 # ======================================================================
 
 
+def _hermes_config() -> tuple[str | None, str | None]:
+    """Read Hermes active provider/model from config.
+
+    Called at handler call time so it always reflects the current config.
+    Falls back to None/None if Hermes is not importable (test env, etc.).
+
+    Returns:
+        (provider, model) tuple — each is None if unavailable.
+    """
+    try:
+        from hermes_cli.config import load_config
+
+        cfg = load_config()
+        provider: str | None = cfg.get("model", {}).get("provider")
+        model: str | None = cfg.get("model", {}).get("default")
+        return provider, model
+    except Exception:
+        return None, None
+
+
 def _check_pi_installed() -> dict:
     """Check if the Pi CLI is installed and accessible (returns structured dict).
 
@@ -648,8 +668,8 @@ def register(ctx) -> None:
         handler=lambda args, **kw: pier_delegate(
             prompt=args["prompt"],
             workdir=args.get("workdir"),
-            model=args.get("model"),
-            provider=args.get("provider"),
+            model=args.get("model") or _hermes_config()[1],
+            provider=args.get("provider") or _hermes_config()[0],
             allowed_tools=args.get("allowed_tools"),
             timeout=args.get("timeout", 300),
         ),
@@ -716,8 +736,8 @@ def register(ctx) -> None:
         handler=lambda args, **kw: pier_session(
             prompt=args["prompt"],
             workdir=args.get("workdir"),
-            model=args.get("model"),
-            provider=args.get("provider"),
+            model=args.get("model") or _hermes_config()[1],
+            provider=args.get("provider") or _hermes_config()[0],
             session_id=args.get("session_id"),
             max_turns=args.get("max_turns"),
             allowed_tools=args.get("allowed_tools"),

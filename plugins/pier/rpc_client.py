@@ -135,8 +135,20 @@ class PiRpcClient:
         self._reader_task = None
         self._stderr_task = None
         self._pi_bin = pi_bin
-        self.provider = provider or "anthropic"
-        self.model = model or "claude-sonnet-4-20250514"
+
+        # Try to inherit Hermes active provider/model
+        try:
+            from hermes_cli.config import load_config
+
+            cfg = load_config()
+            hermes_provider: str | None = cfg.get("model", {}).get("provider")
+            hermes_model: str | None = cfg.get("model", {}).get("default")
+        except Exception:
+            hermes_provider = None
+            hermes_model = None
+
+        self.provider = provider or hermes_provider or "custom"
+        self.model = model or hermes_model or "deepseek-v4-flash"
         self.timeout = timeout
 
     # -- public API ---------------------------------------------------------
