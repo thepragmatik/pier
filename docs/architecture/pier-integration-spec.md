@@ -18,6 +18,7 @@
 6. [Testing Strategy](#6-testing-strategy)
 7. [Security](#7-security)
 8. [Dogfooding Acceptance Criteria](#8-dogfooding-acceptance-criteria)
+9. [Pi Extension Ecosystem Integration](#9-pi-extension-ecosystem-integration)
 
 ---
 
@@ -1363,6 +1364,327 @@ Each dogfooding phase produces a report:
   "proceed_to_next_phase": true
 }
 ```
+
+---
+
+## 9. Pi Extension Ecosystem Integration
+
+### 9.1 Overview
+
+Pi's extension system installs community-maintained TypeScript/JavaScript packages that
+register tools, slash commands, lifecycle hooks, and config flags inside Pi. Pier surfaces
+this extension ecosystem to Hermes users through auto-detection, a curated recommendation
+guide, and one-command setup.
+
+The [Pi Extension Ecosystem Guide](../reference/pi-ecosystem-guide.md) provides a
+comprehensive evaluation of the top 5 extensions by monthly npm downloads
+(~530,000 combined). This section defines how Pier integrates with that ecosystem.
+
+### 9.2 Extension Auto-Detection
+
+The Pier Hermes plugin **SHALL** auto-detect installed Pi extensions and report their
+status to the user. This removes the need for users to manually track which extensions
+are installed or whether their configuration is valid.
+
+**Detection mechanism:**
+
+1. **At plugin load time**, the `check_fn` in `plugin.yaml` calls `pi list` (or `pi list
+   --json` if available) to enumerate installed extensions.
+2. **Extension metadata** is parsed from `~/.pi/agent/extensions/<name>/` directory:
+   - `package.json` for version and description
+   - `config.json` for current configuration state
+   - Exit code of `pi list` to confirm loadability
+3. **Status report** is exposed via the `pier_status` tool, which reports:
+
+```
+Pier Plugin Status
+──────────────────
+Pi CLI:     v0.81.1  (installed at /opt/homebrew/bin/pi)
+Provider:   anthropic/claude-sonnet-4
+Layer:      2 (RPC plugin)
+
+Installed Pi Extensions:
+  pi-mcp-adapter       v2.11.0    ✓ loaded  (MCP gateway — 157K downloads/mo)
+  pi-hermes-memory     v0.8.2     ✓ loaded  (port of Hermes memory — 2K downloads/mo)
+  pi-subagents         v0.35.1    ✓ loaded  (parallel/chain subagents — 124K downloads/mo)
+  pi-web-access        v0.13.0    ✓ loaded  (web search + fetch — 135K downloads/mo)
+  context-mode         v1.0.169   ✓ loaded  (context optimization — 102K downloads/mo)
+
+  Total: 5 extensions loaded, 0 errors
+```
+
+**Error states detected:**
+
+| Condition | Status | User Action |
+|-----------|--------|-------------|
+| Extension not installed | `✗ not installed` | `pi install npm:<package>` |
+| Extension installed but config missing | `⚠ no config` | `pi install npm:<package>` (re-install to regenerate config) |
+| Extension failed to load | `✗ load error: <message>` | Check extension logs in `~/.pi/agent/extensions/<name>/` |
+| Pi not installed at all | `✗ Pi not found` | Install Pi: `npm install -g @earendil-works/pi-coding-agent` |
+
+**Design rationale (Question 1):** Auto-detection is the right default because:
+- Pi's extension ecosystem has 5 well-maintained, well-downloaded packages.
+- Users shouldn't need to remember which extensions they installed or whether they're
+  configured correctly.
+- The detection is cheap (one subprocess call to `pi list`) and runs once at plugin load
+  time, not on every task.
+- A clear status report reduces support burden — users see exactly what's installed and
+  whether it works.
+
+### 9.3 Extension Classification: Essential vs. Optional
+
+Pi extensions are classified into **Essential** and **Optional** tiers based on how
+relevant the extension is to the Pier + Hermes integration surface (not raw download
+numbers).
+
+| Extension | Tier | Why |
+|-----------|------|-----|
+| **pi-mcp-adapter** | **Essential** | Bridges Pi to the MCP ecosystem (filesystem, GitHub, databases, APIs). Enables Pi to use any MCP-compatible server. Pier's RPC bridge + MCP adapter = full tool ecosystem. |
+| **pi-subagents** | **Essential** | Parallel/chain subagent delegation within Pi sessions. Maps directly to Hermes's delegate_task pattern. Enables Pi to spawn child agents for independent subtasks. |
+| **pi-web-access** | **Essential** | Web search and content fetching. Headless-compatible (`workflow: "none"` or `"auto-summary"`). Essential for coding tasks that need current documentation, API references, or package lookups. |
+| **pi-hermes-memory** | Optional | Port of Hermes memory system into Pi. Provides persistent cross-session memory for Pi sessions triggered by Pier. Valuable but not required for Pier integration — Hermes already has its own memory system. |
+| **context-mode** | Optional | Context window optimization via sandboxed execution. Reduces token costs but adds dependency overhead (MCP server, better-sqlite3). Use when token budget management is critical. |
+
+**Design rationale (Question 4):** The Essential tier is driven by the Pier integration
+surface:
+- **pi-mcp-adapter** — without it, Pi has no external tool capabilities beyond bash.
+  With it, Pi connects to the entire MCP ecosystem. This is the single highest-leverage
+  extension for Pier.
+- **pi-subagents** — multi-agent delegation is a core Hermes pattern. Pi without
+  subagents cannot do parallel file analysis, independent subtask execution, or chained
+  work. This directly mirrors Hermes's `delegate_task` capability.
+- **pi-web-access** — coding tasks frequently need fresh information (docs, API
+  references, npm/pip package details). Headless mode makes it Pier-compatible.
+  Without it, Pi is limited to offline reasoning.
+
+### 9.4 "Hermes Orchestrates Pi + Pi Extensions" Pattern
+
+This section documents the core pattern for Pier's extension ecosystem integration: Hermes
+as orchestrator, Pi as worker, and Pi extensions as capability expanders.
+
+**Pattern:**
+
+```
+Hermes Agent (orchestrator)
+  │
+  ├─ pier_delegate("Analyze this error log and fix the root cause")
+  │    │
+  │    └─ Pi Session (worker)
+  │         │
+  │         ├─ pi-web-access → web_search("TypeError in fastapi 0.115")
+  │         │                   fetch_content(["https://fastapi.tiangolo.com/...", ...])
+  │         │
+  │         ├─ pi-subagents → subagent({tasks: [
+  │         │                   {agent: "code-reviewer", task: "Review src/auth.py"},
+  │         │                   {agent: "test-writer",   task: "Write tests for auth fix"}
+  │         │                 ]})
+  │         │
+  │         ├─ pi-mcp-adapter → mcp({tool: "github_create_issue", args: {...}})
+  │         │                   mcp({tool: "filesystem_read", args: {...}})
+  │         │
+  │         └─ context-mode → ctx_execute("npm run test 2>&1 | head -50")
+  │                           ctx_search("fastapi authentication patterns")
+  │
+  └─ pier_delegate("Create a PR for the changes")
+       │
+       └─ Pi Session (worker)
+            └─ pi-mcp-adapter → mcp({tool: "github_create_pull_request", args: {...}})
+```
+
+**Key properties:**
+
+- **Hermes is the orchestrator.** It decides what to delegate and when. Pi extensions
+  expand what Pi can do, but Hermes controls the task flow.
+- **Pi is the worker.** Pi receives bounded tasks from Hermes and executes them using its
+  tools, extensions, and model.
+- **Extensions are capability expanders.** They add tools to Pi's registry at session
+  start. Hermes doesn't need to know which extensions provided which tools — Pi surfaces
+  them as regular tool calls in the RPC event stream.
+- **All extensions work in print mode / RPC mode.** The five top extensions are all
+  headless-compatible. They register tools at extension load time (before session mode is
+  chosen), so tools work in non-interactive mode. Slash commands that require a TUI are
+  the exception, not the rule.
+
+**Design rationale (Question 3):** This pattern is documented here as part of the
+integration spec rather than a separate document because it defines the architectural
+contract between Hermes, Pier, Pi, and Pi's extension ecosystem. Future Pier features
+(one-command setup, extension status reporting, docker dogfooding) build on this pattern.
+
+### 9.5 Docker Dogfooding with Extensions
+
+The Docker-based dogfooding test suite (see [dogfooding/](../dogfooding/) and section 8)
+**SHALL** include pi-mcp-adapter as a representative integration test on the MCP surface.
+
+**Rationale (Question 2):** The pi-mcp-adapter is the highest-download Pi extension
+(157K/month) and bridges Pi to the broader MCP ecosystem. It is the most impactful
+extension to validate in dogfooding because:
+
+1. **Highest community adoption** — if pi-mcp-adapter breaks, it affects the most users.
+2. **Protocol complexity** — MCP is a stdio-based protocol just like Pi's RPC. Testing
+   that Pier → Pi RPC → pi-mcp-adapter → MCP server works end-to-end validates the full
+   integration stack.
+3. **Representative of the extension class** — validating pi-mcp-adapter covers the
+   architectural concerns (extension loading, tool registration, mode compatibility)
+   that apply to all extensions.
+
+**Dogfooding test specification:**
+
+```yaml
+# Dogfooding test: pi-mcp-adapter integration
+name: pi_mcp_adapter_dogfooding
+phase: 2  # Shadow mode — RPC events compared against terminal output
+extensions:
+  - pi-mcp-adapter
+setup:
+  - pi install npm:pi-mcp-adapter
+  - Configure MCP filesystem server (allowlist: /tmp/pier-dogfooding/)
+tasks:
+  - name: "MCP filesystem tool via Pier"
+    prompt: "Create a file called hello-mcp.txt in /tmp/pier-dogfooding/ with content 'Hello from Pi MCP adapter!'"
+    verify:
+      - File exists: /tmp/pier-dogfooding/hello-mcp.txt
+      - Content matches: "Hello from Pi MCP adapter!"
+  - name: "MCP tool listing via Pier"
+    prompt: "List all available MCP tools and their descriptions"
+    verify:
+      - Output contains tool names and descriptions
+  - name: "MCP + RPC event verification"
+    prompt: "Use an MCP tool and verify RPC events are well-formed"
+    verify:
+      - tool_execution_start event emitted for MCP tool
+      - tool_execution_end event emitted with output
+      - No protocol desync events
+```
+
+**Container configuration:**
+
+```dockerfile
+# Dogfooding container with pi-mcp-adapter
+FROM node:22-slim
+RUN npm install -g @earendil-works/pi-coding-agent
+RUN pi install npm:pi-mcp-adapter
+# Configure a minimal MCP filesystem server for testing
+RUN mkdir -p /root/.pi
+RUN echo '{"mcpServers":{"filesystem":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/tmp/pier-dogfooding/"]}}}' > /root/.pi/mcp-config.json
+WORKDIR /workspace
+```
+
+### 9.6 One-Command Setup
+
+Pier **SHALL** provide a `pier setup` command (or equivalent) that installs the
+recommended Pi extensions in a single step.
+
+**Design rationale (Question 5):** A one-command setup is essential because:
+
+- **Reduces adoption friction.** Users evaluating Pier should install 3 extensions, not
+  discover 5 npm packages, evaluate them, and install them one by one.
+- **Ensures consistent environment.** CI/CD and team setups get identical extension
+  configurations. No "works on my machine" drift.
+- **Documents the recommended stack.** The setup command is the living specification of
+  which extensions Pier recommends and in what configuration.
+
+**`pier setup` specification:**
+
+```bash
+pier setup [--essential|--all|--none]
+```
+
+| Flag | Behavior |
+|------|----------|
+| `--essential` (default) | Install the 3 Essential extensions: pi-mcp-adapter, pi-subagents, pi-web-access |
+| `--all` | Install all 5 extensions including Optional: pi-hermes-memory, context-mode |
+| `--none` | Skip extension installation. Report which extensions are recommended. |
+
+**Implementation:**
+
+```python
+# pier/cli.py (future)
+import subprocess
+
+ESSENTIAL_EXTENSIONS = [
+    "pi-mcp-adapter",
+    "pi-subagents",
+    "pi-web-access",
+]
+
+OPTIONAL_EXTENSIONS = [
+    "pi-hermes-memory",
+    "context-mode",
+]
+
+def setup_extensions(mode: str = "essential") -> dict:
+    """
+    Install recommended Pi extensions.
+
+    Args:
+        mode: "essential" (3 extensions), "all" (5), or "none" (report only)
+
+    Returns:
+        Dict with install results per extension.
+    """
+    extensions = {
+        "essential": ESSENTIAL_EXTENSIONS,
+        "all": ESSENTIAL_EXTENSIONS + OPTIONAL_EXTENSIONS,
+        "none": [],
+    }[mode]
+
+    results = {}
+    for ext in extensions:
+        result = subprocess.run(
+            ["pi", "install", f"npm:{ext}"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        results[ext] = {
+            "installed": result.returncode == 0,
+            "version": _parse_version(result.stdout),
+            "error": result.stderr.strip() if result.returncode != 0 else None,
+        }
+
+    return results
+```
+
+**Verification after setup:**
+
+```bash
+$ pier setup --essential
+pi-mcp-adapter      v2.11.0    ✓ installed
+pi-subagents        v0.35.1    ✓ installed
+pi-web-access       v0.13.0    ✓ installed
+
+3 of 3 extensions installed successfully.
+
+Run `pier status` to see extension status at any time.
+Recommended next step: configure MCP servers in ~/.pi/mcp-config.json
+  See: https://github.com/nicobailon/pi-mcp-adapter#configuration
+```
+
+### 9.7 Extension Compatibility Guarantees
+
+Pier's integration with Pi extensions follows these compatibility guarantees:
+
+| Guarantee | Details |
+|-----------|---------|
+| **All Essential extensions work in print mode** | Verified in pi-ecosystem-guide.md. Tools registered at extension load time are mode-independent. |
+| **All Essential extensions work in RPC mode** | RPC mode loads extensions identically to interactive mode. The tool registry is the same. |
+| **No tool name collisions** | All 5 top extensions were installed simultaneously with zero conflicts. Pier's status report will flag new collisions if they arise. |
+| **Extension errors are surfaced** | `extension_error` RPC events are mapped to Hermes tool-call hooks. The user sees "Extension pi-mcp-adapter reported an error: ..." rather than silent failure. |
+| **Graceful degradation** | If an extension fails to load, Pier continues with the remaining extensions. A failed extension does not block the delegation. |
+
+### 9.8 Future: Extension Configuration Management
+
+Beyond v1 auto-detection, future versions of Pier may provide:
+
+- **`pier extensions config`** — Interactive TUI to configure all extension settings
+  (MCP server endpoints, memory char limits, subagent depth, web search providers).
+- **`pier extensions sync`** — Export/import extension configurations for team
+  consistency.
+- **Extension health monitoring** — Track extension load times, error rates, and tool
+  call success rates over time. Surface degradation trends.
+
+These are scoped but not scheduled. The v1 deliverables are auto-detection,
+classification, and one-command setup.
 
 ---
 
