@@ -50,8 +50,8 @@ def test_init_defaults():
     """PiRpcClient initializes with sensible defaults."""
     client = PiRpcClient()
 
-    assert client.provider == "anthropic"
-    assert client.model == "claude-sonnet-4-20250514"
+    assert client.provider == "custom"
+    assert client.model == "deepseek-v4-flash"
     assert client.timeout == 600.0
     assert client.running is False
     assert client._process is None
@@ -78,8 +78,8 @@ def test_init_with_none_provider_and_model():
     """PiRpcClient falls back to defaults when provider/model are None."""
     client = PiRpcClient(provider=None, model=None)
 
-    assert client.provider == "anthropic"
-    assert client.model == "claude-sonnet-4-20250514"
+    assert client.provider == "custom"
+    assert client.model == "deepseek-v4-flash"
 
 
 def test_running_false_when_not_started(client):
