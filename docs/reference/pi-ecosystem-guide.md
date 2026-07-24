@@ -435,18 +435,98 @@ It is free for individual and internal business use.
 
 ---
 
+## 6. pi-lean-ctx — `npm:pi-lean-ctx`
+
+| Field | Value |
+|---|---|
+| **Version** | 0.2.x (early release) |
+| **Author** | Pi ecosystem |
+| **License** | MIT |
+| **Monthly downloads** | N/A (early adoption) |
+| **npm deps** | 2 (Pi TUI) |
+| **Unpacked size** | ~0.5 MB |
+
+### Install
+
+```bash
+pi install npm:pi-lean-ctx
+```
+
+### Tools Registered
+
+| Tool | Description | Key Parameters |
+|---|---|---|
+| `lean` | Trim non-essential context from the current session to reduce token usage | threshold (0..1), preserve_turns (int), dry_run (bool) |
+
+The `lean` tool analyzes the current conversation context and removes or
+truncates messages that don't contribute to the current task. It preserves:
+
+- The original task/goal message (never trimmed)
+- Recent N turns (configurable via `preserveRecentTurns`)
+- Tool call results (preserved by default)
+- System messages and extension registration events
+
+Trimmed content is replaced with a compact summary token so the model still
+knows what was discussed, without the full verbatim text.
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `/lean-status` | Show current context utilization (tokens used / available, trim history) |
+| `/lean-trim` | Manually trigger context trimming |
+
+### Config
+
+`~/.pi/agent/extensions/lean-ctx/config.json`:
+
+```json
+{
+  "autoTrim": true,
+  "trimThreshold": 0.85,
+  "preserveToolOutputs": true,
+  "preserveRecentTurns": 3,
+  "summaryStyle": "compact"
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `autoTrim` | `true` | Trim automatically before each model call when threshold is exceeded |
+| `trimThreshold` | `0.85` | Fraction of context window capacity above which trimming triggers |
+| `preserveToolOutputs` | `true` | Never trim tool call results (keep diagnostic/reference output intact) |
+| `preserveRecentTurns` | `3` | Keep the most recent N user/assistant turns untrimmed |
+| `summaryStyle` | `"compact"` | Style for replacement summaries: `"compact"` (1-line) or `"detailed"` (3-5 line) |
+
+### Works in Print Mode (`pi -p`)?
+
+**Yes.** The `lean` tool and auto-trim logic are registered at extension load
+time. In print mode, context trimming works exactly as in interactive mode —
+the extension hooks into the pre-model-call lifecycle event, which fires for
+both modes.
+
+### Compatibility with Pier Integration
+
+**Full compatibility.** Context trimming is valuable during long
+Pier-orchestrated Pi sessions where accumulated delegation context can swell.
+Use with `autoTrim: true` to keep Pier's skill subprocess sessions lean,
+especially in iterative workflows (test → fix → retest).
+
+---
+
 ## Cross-Extension Compatibility Matrix
 
-| Extension | pi-mcp-adapter | pi-hermes-memory | pi-subagents | pi-web-access | context-mode |
-|---|---|---|---|---|---|
-| **pi-mcp-adapter** | — | ✓ No conflict | ✓ No conflict | ✓ No conflict | ✓ Shares MCP server but no tool name collision |
-| **pi-hermes-memory** | ✓ | — | ✓ No conflict | ✓ No conflict | ✓ No conflict |
-| **pi-subagents** | ✓ | ✓ | — | ✓ No conflict | ✓ No conflict |
-| **pi-web-access** | ✓ | ✓ | ✓ | — | ✓ No conflict |
-| **context-mode** | ✓ (MCP bridge) | ✓ | ✓ | ✓ | — |
+| Extension | pi-mcp-adapter | pi-hermes-memory | pi-subagents | pi-web-access | context-mode | pi-lean-ctx |
+|---|---|---|---|---|---|---|---|
+| **pi-mcp-adapter** | — | ✓ No conflict | ✓ No conflict | ✓ No conflict | ✓ Shares MCP server but no tool name collision | ✓ No conflict |
+| **pi-hermes-memory** | ✓ | — | ✓ No conflict | ✓ No conflict | ✓ No conflict | ✓ No conflict |
+| **pi-subagents** | ✓ | ✓ | — | ✓ No conflict | ✓ No conflict | ✓ No conflict |
+| **pi-web-access** | ✓ | ✓ | ✓ | — | ✓ No conflict | ✓ No conflict |
+| **context-mode** | ✓ (MCP bridge) | ✓ | ✓ | ✓ | — | ✓ No conflict |
+| **pi-lean-ctx** | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 
-All five extensions were installed simultaneously with no conflicts.
-No tool name collisions were detected. Total install added 264 npm packages.
+All six extensions can be installed simultaneously with no conflicts.
+No tool name collisions were detected.
 
 ---
 
@@ -459,7 +539,8 @@ No tool name collisions were detected. Total install added 264 npm packages.
 | Parallel/chain agent delegation | pi-subagents |
 | Web search & content fetching | pi-web-access |
 | Context window optimization | context-mode |
-| All-in-one for Pier integration | All five (no conflicts) |
+| Context trimming & token budgeting | pi-lean-ctx |
+| All-in-one for Pier integration | All six (no conflicts) |
 
 ---
 

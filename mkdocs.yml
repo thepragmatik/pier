@@ -38,6 +38,7 @@ nav:
       - Skills: user-guide/skills.md
       - Plugins: user-guide/plugins.md
       - Pi Extensions: user-guide/pi-extensions.md
+      - Pi Extension Setup: user-guide/pi-extension-setup.md
   - Architecture:
       - Overview: architecture/overview.md
       - Integration Spec: architecture/pier-integration-spec.md
