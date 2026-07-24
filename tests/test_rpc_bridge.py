@@ -10,8 +10,8 @@ Tests:
 Usage: python3 test_rpc_bridge.py
 """
 
-import subprocess
 import json
+import subprocess
 import sys
 import time
 
@@ -107,7 +107,7 @@ def test_basic_prompt():
         try:
             proc.kill()
             proc.wait(timeout=5)
-        except:
+        except Exception:
             pass
 
     text = extract_text(events)
@@ -162,7 +162,7 @@ def test_abort():
         try:
             proc.kill()
             proc.wait(timeout=5)
-        except:
+        except Exception:
             pass
 
     abort_ok = any(
@@ -256,7 +256,7 @@ def test_get_state():
         try:
             proc.kill()
             proc.wait(timeout=5)
-        except:
+        except Exception:
             pass
 
     # Find get_state response
